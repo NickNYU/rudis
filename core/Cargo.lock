@@ -7,9 +7,5 @@ name = "core"
 version = "0.1.0"
 
 [[package]]
-name = "resp"
-version = "0.1.0"
-
-[[package]]
-name = "rudis"
+name = "lifecycle"
 version = "0.1.0"
