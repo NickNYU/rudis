@@ -1,6 +1,5 @@
-workspace = { members = ["core", "resp"] }
 [package]
-name = "rudis"
+name = "resp"
 version = "0.1.0"
 edition = "2021"
 
