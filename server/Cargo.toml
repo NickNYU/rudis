@@ -1,9 +1,11 @@
-workspace = { members = ["core", "resp", "server"] }
 [package]
-name = "rudis"
+name = "server"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+core = { version = "0.1.0", path = "../core" }
+mio = { version = "0.8", features = ["net", "os-poll"] }
+bytes = "1.0"
