@@ -4,7 +4,15 @@ use core::lifecycle::lifecycle::{ConstructiveLifecycle};
 pub trait EventLoop: ConstructiveLifecycle {
     fn get_max_file_descriptor() -> i32;
 
-    fn process_events(self, flags: EventLoopFlag) -> io::Result<()>;
+    fn before_sleep(self) -> io::Result<()>;
+
+    fn after_sleep(self) -> io::Result<()>;
+
+    fn process_events(self, flags: EventLoopFlag) -> io::Result<()> {
+
+    }
+
+    fn timeEventManager()->
 }
 
 /* Process every pending time event, then every pending file event
