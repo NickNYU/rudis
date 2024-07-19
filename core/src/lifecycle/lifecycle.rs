@@ -1,18 +1,21 @@
-use crate::lifecycle::{initialize::Initializable, start::Startable, stop::Stoppable};
 use crate::lifecycle::construct::Constructive;
 
-pub trait Lifecycle: Initializable + Startable + Stoppable + Drop {
+pub trait Lifecycle: Drop {
+
+    fn initialize() -> Result<(), Err>;
+    fn start() -> Result<(), Err>;
+
+    fn stop() -> Result<(), Err>;
+}
+
+pub trait ConstructiveLifecycle: Constructive + Lifecycle {
 
 }
 
-pub trait ConstructiveLifecyle: Constructive + Lifecycle {
-
+pub trait LiteLifecycle: Drop {
+    fn initialize() -> Result<(), Err>;
 }
 
-pub trait LiteLifecycle: Initializable + Drop {
-
-}
-
-pub trait ConstructiveLiteLifecyle: Constructive + LiteLifecycle {
+pub trait ConstructiveLiteLifecycle: Constructive + LiteLifecycle {
 
 }

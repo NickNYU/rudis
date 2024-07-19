@@ -1,4 +1,4 @@
-workspace = { members = ["core", "resp"] }
+workspace = { members = ["core", "resp", "server"] }
 [package]
 name = "rudis"
 version = "0.1.0"
