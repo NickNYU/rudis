@@ -12,9 +12,12 @@ pub(crate) trait TimeEventManager: ConstructiveLiteLifecycle {
     //         aeTimeProc *proc, void *clientData,
     //         aeEventFinalizerProc *finalizerProc)
     // ```
-    fn create_time_event<DATA: Sized + Send>(duration: Duration, f: TimeProc<DATA>) -> io::Result<EventID>;
+    fn create_time_event<DATA: Sized + Send>(&mut self, duration: Duration, f: TimeProc<DATA>)
+        -> io::Result<EventID>;
 
-    fn delete_time_event(event_id: EventID) -> io::Result<()>;
+    // int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id)
+    fn delete_time_event(&mut self, event_id: EventID) -> io::Result<()>;
 
-    fn process_time_event() -> io::Result<i64>;
+    // static int processTimeEvents(aeEventLoop *eventLoop)
+    fn process_time_events(&mut self) -> io::Result<i64>;
 }
