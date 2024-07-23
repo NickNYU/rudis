@@ -1,7 +1,9 @@
+use mio::net::TcpStream;
 use core::lifecycle::lifecycle::LiteLifecycle;
 
 pub(crate) struct Client {
-
+    connection: TcpStream,
+    cmd:
 }
 
 impl Default for Client {
