@@ -25,11 +25,12 @@ impl MioEventManager {
     }
 
     fn accept_new_client(&self, event: &Event) {
-        self.get_server().get_client_manager().create_client();
+        SERVER.client_manager.create_client(event);
     }
 
     fn read_for_client(&self, event: &Event) {
         // event
+        SERVER.client_manager.
     }
 }
 
@@ -78,7 +79,7 @@ impl core::lifecycle::construct::Constructive for MioEventManager {
 
 impl core::lifecycle::lifecycle::LiteLifecycle for MioEventManager {
     fn initialize(&mut self) -> Result<(), Err> {
-        // Setup the TCP server socket.
+        // Set up the TCP server socket.
         let add_str = format!("127.0.0.1:{port}", port=SERVER.config.port);
         let addr = add_str.parse().unwrap();
         let mut server = TcpListener::bind(addr)?;

@@ -1,9 +1,12 @@
+use lazy_static::lazy_static;
 use crate::client::ClientManager;
 
-pub static SERVER: RedisServer = RedisServer::default();
+lazy_static! {
+    pub static ref SERVER: Box<RedisServer> = Box::new(RedisServer::default());
+}
 pub(crate) struct RedisServer {
-    client_manager: ClientManager,
-    pub config: RedisServerConfig
+    pub(crate) client_manager: ClientManager,
+    pub(crate) config: RedisServerConfig
 }
 
 impl Default for RedisServer {
@@ -16,8 +19,8 @@ impl Default for RedisServer {
 }
 
 impl RedisServer {
-    pub fn get_client_manager(self) -> ClientManager {
-        self.client_manager
+    pub fn get_client_manager(self) -> *ClientManager {
+        &self.client_manager
     }
 }
 
