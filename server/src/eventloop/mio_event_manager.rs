@@ -1,7 +1,8 @@
 use std::io;
 use std::io::ErrorKind;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use log::error;
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Event;
 use mio::net::TcpListener;
@@ -12,7 +13,11 @@ use crate::server::SERVER;
 pub(crate) struct MioEventManager {
     mio_poll: Poll,
 
-    events: Events
+    events: Events,
+
+    binder: Arc<Mutex<TcpListener>>,
+
+    id_generator: AtomicUsize,
 }
 
 impl MioEventManager {
@@ -24,13 +29,25 @@ impl MioEventManager {
         event.token() == Self::ACCEPTOR
     }
 
-    fn accept_new_client(&self, event: &Event) {
-        SERVER.client_manager.create_client(event);
+    fn accept_new_client(&mut self, event: &Event) {
+        if let Ok((mut connection, address)) = self.binder.accept() {
+            println!("Accepted connection from: {}", address);
+            let fd = self.id_generator.fetch_add(1, Ordering::Relaxed);
+            self.mio_poll.registry().register(
+                &mut connection,
+                Token(fd),
+                Interest::READABLE.add(Interest::WRITABLE),)?;
+            SERVER.client_manager.create_client(fd, connection, address);
+        };
+
     }
 
     fn read_for_client(&self, event: &Event) {
         // event
-        SERVER.client_manager.
+        if let Some(client) = SERVER
+            .client_manager.get_client(event.token().0) {
+            // client.read
+        }
     }
 }
 
@@ -70,22 +87,24 @@ impl core::lifecycle::construct::Constructive for MioEventManager {
 
     fn new() -> Self::Instance {
         let poll = Poll::new().unwrap();
+        let add_str = format!("127.0.0.1:{port}", port=SERVER.config.port);
+        let addr = add_str.parse().unwrap();
+        let mut server = TcpListener::bind(addr)?;
+        // Register the server with poll we can receive events for it.
+        poll.registry()
+            .register(&mut server, Self::ACCEPTOR, Interest::READABLE)?;
         Self {
             mio_poll: poll,
             events: Events::with_capacity(Self::EVENTS_SIZE),
+            binder: Arc::new(Mutex::new(server)),
+            id_generator: AtomicUsize::new(1),
         }
     }
 }
 
 impl core::lifecycle::lifecycle::LiteLifecycle for MioEventManager {
     fn initialize(&mut self) -> Result<(), Err> {
-        // Set up the TCP server socket.
-        let add_str = format!("127.0.0.1:{port}", port=SERVER.config.port);
-        let addr = add_str.parse().unwrap();
-        let mut server = TcpListener::bind(addr)?;
-        // Register the server with poll we can receive events for it.
-        self.mio_poll.registry()
-            .register(&mut server, Self::ACCEPTOR, Interest::READABLE)?;
+        Ok(())
     }
 }
 

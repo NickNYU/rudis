@@ -18,12 +18,6 @@ impl Default for RedisServer {
     }
 }
 
-impl RedisServer {
-    pub fn get_client_manager(self) -> *ClientManager {
-        &self.client_manager
-    }
-}
-
 pub(crate) struct RedisServerConfig {
     pub(crate) port: i32,
 
