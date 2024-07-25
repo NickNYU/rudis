@@ -30,7 +30,7 @@ impl MioEventManager {
     }
 
     fn accept_new_client(&mut self, event: &Event) {
-        if let Ok((mut connection, address)) = self.binder.accept() {
+        if let Ok((mut connection, address)) = self.binder.get_mut().unwrap().accept() {
             println!("Accepted connection from: {}", address);
             let fd = self.id_generator.fetch_add(1, Ordering::Relaxed);
             self.mio_poll.registry().register(

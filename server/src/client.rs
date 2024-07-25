@@ -59,18 +59,13 @@ impl Default for ClientManager {
 }
 
 impl ClientManager {
-    pub(crate) fn create_client(client_id: usize, conn: TcpStream, address: SocketAddr) -> Option<Box<Client>> {
-        let mut client = Box::new(Client::new(client_id, conn, address));
-        return match client.initialize() {
-            Err(e) => {
-                log::error!("{}", e);
-                None
-            }
-            () => Some(client)
-        }
-    }
 
     pub(crate) fn get_client(&mut self, client_id: usize) -> Option<&mut Box<Client>> {
         self.clients.get_mut(&client_id)
+    }
+
+    pub(crate) fn create_client(&mut self, fd: usize, conn: TcpStream, address: SocketAddr) -> () {
+        let client = Box::new(Client::new(fd, conn, address));
+        self.clients.insert(fd, client);
     }
 }
