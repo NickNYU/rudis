@@ -26,7 +26,7 @@ impl Unknown {
     ///
     /// This usually means the command is not yet implemented by `rudis`.
     #[instrument(skip(self, dst))]
-    pub(crate) async fn apply(self, dst: Connection) -> Result<()> {
+    pub(crate) async fn apply(self, dst: &mut Connection) -> Result<()> {
         let response = Protocol::Error(format!("ERR unknown command '{}'", self.command_name));
 
         debug!(?response);

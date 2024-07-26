@@ -18,7 +18,7 @@ impl Client {
             client_id,
             address,
             connection: Connection::new(conn),
-            cmd: Option::None
+            cmd: None
         }
     }
 
@@ -28,6 +28,7 @@ impl Client {
             None => return (),
         };
         let command = Command::from(protocol);
+        command.apply(&mut self.connection).unwrap()
     }
 }
 
