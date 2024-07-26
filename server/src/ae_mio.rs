@@ -18,11 +18,6 @@ impl MioEventLoop {
     const EVENTS_SIZE: usize = 1024;
 }
 
-impl EventLoop for MioEventLoop {
-
-}
-
-impl core::lifecycle::lifecycle::ConstructiveLifecycle for MioEventLoop {}
 
 impl core::lifecycle::construct::Constructive for MioEventLoop {
     type Instance = MioEventLoop;
@@ -35,21 +30,6 @@ impl core::lifecycle::construct::Constructive for MioEventLoop {
         }
     }
 }
-
-impl core::lifecycle::lifecycle::Lifecycle for MioEventLoop {
-    fn initialize() -> Result<(), Err> {
-        todo!()
-    }
-
-    fn start() -> Result<(), Err> {
-        todo!()
-    }
-
-    fn stop() -> Result<(), Err> {
-        todo!()
-    }
-}
-
 impl Drop for MioEventLoop {
     fn drop(&mut self) {
         todo!()

@@ -6,7 +6,6 @@ use std::time::Duration;
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Event;
 use mio::net::TcpListener;
-use crate::eventloop::event::EventID;
 use crate::eventloop::io_event::IoEventManager;
 use crate::server::SERVER;
 
@@ -29,7 +28,7 @@ impl MioEventManager {
         event.token() == Self::ACCEPTOR
     }
 
-    fn accept_new_client(&mut self, event: &Event) {
+    fn accept_new_client(&mut self) -> () {
         if let Ok((mut connection, address)) = self.binder.get_mut().unwrap().accept() {
             println!("Accepted connection from: {}", address);
             let fd = self.id_generator.fetch_add(1, Ordering::Relaxed);
@@ -42,23 +41,16 @@ impl MioEventManager {
 
     }
 
-    fn read_for_client(&self, event: &Event) {
+    fn read_for_client(&self, event: &Event) -> () {
         // event
         if let Some(client) = SERVER
             .client_manager.get_client(event.token().0) {
-            // client.read
+            client.read_from_query();
         }
     }
 }
 
 impl IoEventManager for MioEventManager {
-    fn create_io_event<DATA: Sized + Send>(&mut self, fd: i32, mask: i32, f: Box<crate::eventloop::io_event::IoEventProc<DATA>>) -> std::io::Result<()> {
-        todo!()
-    }
-
-    fn delete_io_event(&mut self, event_id: EventID) -> std::io::Result<()> {
-        todo!()
-    }
 
     fn process_io_events(&mut self, timeout: Option<Duration>) -> io::Result<i64> {
         match self.mio_poll.poll(&mut self.events, timeout) {
@@ -66,7 +58,7 @@ impl IoEventManager for MioEventManager {
                 let mut counter: i64 = 0;
                 for mio_event in &self.events {
                     if self.is_accept_event(mio_event) {
-                        self.accept_new_client(mio_event);
+                        self.accept_new_client();
                     } else {
                         self.read_for_client(mio_event)
                     }
@@ -110,8 +102,6 @@ impl core::lifecycle::lifecycle::LiteLifecycle for MioEventManager {
 
 impl Drop for MioEventManager {
     fn drop(&mut self: Self::Instance) {
-        drop(self.events);
-        drop(self.mio_poll);
         // todo!()
     }
 }

@@ -1,6 +1,6 @@
 use resp::{self, Result, protocol::Protocol, parse::Parser};
-use crate::client::Client;
 use crate::command::{ping::Ping, unknown::Unknown};
+use crate::connection::Connection;
 
 pub(crate) mod ping;
 pub(crate) mod set;
@@ -23,7 +23,7 @@ impl Command {
     /// # Returns
     ///
     /// On success, the command value is returned, otherwise, `Err` is returned.
-    pub fn from_frame(protocol: Protocol) -> Result<Command> {
+    pub fn from_protocol(protocol: Protocol) -> Result<Command> {
         // The protocol value is decorated with `Parse`. `Parse` provides a
         // "cursor" like API which makes parsing the command easier.
         //
@@ -32,7 +32,7 @@ impl Command {
         let mut parse = Parser::new(protocol)?;
 
         // All redis commands begin with the command name as a string. The name
-        // is read and converted to lower cases in order to do case sensitive
+        // is read and converted to lower cases in order to do case-sensitive
         // matching.
         let command_name = parse.next_string()?.to_lowercase();
 
@@ -64,12 +64,12 @@ impl Command {
     ///
     /// The response is written to `dst`. This is called by the server in order
     /// to execute a received command.
-    pub(crate) fn apply(self, client: &mut Client) -> Result<()> {
+    pub(crate) fn apply(self, connection: &mut Connection) -> Result<()> {
         use Command::*;
 
         match self {
-            Ping(cmd) => cmd.apply(client.connection),
-            Unknown(cmd) => cmd.apply(client.connection),
+            Ping(cmd) => cmd.apply(connection),
+            Unknown(cmd) => cmd.apply(connection),
         }
     }
 
