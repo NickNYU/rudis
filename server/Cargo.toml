@@ -7,9 +7,11 @@ edition = "2021"
 
 [dependencies]
 core = { version = "0.1.0", path = "../core" }
+resp = { version = "0.1.0", path = "../resp" }
 mio = { version = "0.8", features = ["net", "os-poll"] }
 tokio = {version = "1.38.1", features = ["net", "time"]}
 bytes = "1.0"
 log = "0.4.22"
 ahash = "0.7"
 lazy_static = "1.4"
+tracing = "0.1.34"
