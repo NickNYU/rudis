@@ -6,6 +6,7 @@ mod eventloop;
 mod server;
 mod client;
 mod command;
+mod connection;
 
 fn main() {
     println!("Hello, world!");

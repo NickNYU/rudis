@@ -1,20 +1,14 @@
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::AtomicUsize;
 use mio::net::TcpStream;
-use mio::Token;
-use core::lifecycle::lifecycle::ConstructiveLiteLifecycle;
 use crate::command::Command;
 use ahash::AHashMap;
-use mio::event::Event;
-use tokio::net::unix::SocketAddr;
-use crate::server::RedisServerConfig;
+use crate::connection::Connection;
 
 #[derive(Debug)]
 pub(crate) struct Client {
     client_id: usize,
     address: SocketAddr,
-    connection: TcpStream,
+    pub(crate) connection: Connection,
     cmd: Option<Command>,
 }
 
@@ -23,13 +17,17 @@ impl Client {
         Self {
             client_id,
             address,
-            connection: conn,
+            connection: Connection::new(conn),
             cmd: Option::None
         }
     }
 
-    pub(crate) fn read_from_query() -> () {
-
+    pub(crate) fn read_from_query(&mut self) -> () {
+        let protocol = match self.connection.read_protocol() {
+            Some(frame) => frame,
+            None => return (),
+        };
+        let command = Command::from(protocol);
     }
 }
 
