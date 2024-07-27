@@ -1,7 +1,7 @@
 use resp::{self, Result, protocol::Protocol};
 
 use bytes::{Buf, BytesMut};
-use std::io::{self, BufWriter, Cursor, Write};
+use std::io::{self, BufWriter, Cursor, Read, Write};
 use mio::net::TcpStream;
 
 /// Send and receive `Protocol` values from a remote peer.
@@ -21,23 +21,27 @@ pub struct Connection {
     // The `TcpStream`. It is decorated with a `BufWriter`, which provides write
     // level buffering. The `BufWriter` implementation provided by Tokio is
     // sufficient for our needs.
-    stream: BufWriter<TcpStream>,
+    // stream: BufWriter<TcpStream>,
+
+    writer: TcpStream,
 
     // The buffer for reading Protocols.
     buffer: BytesMut,
 }
+
 
 impl Connection {
     /// Create a new `Connection`, backed by `socket`. Read and write buffers
     /// are initialized.
     pub fn new(socket: TcpStream) -> Connection {
         Connection {
-            stream: BufWriter::new(socket),
+            // stream: BufWriter::new(socket),
             // Default to a 4KB read buffer. For the use case of mini redis,
             // this is fine. However, real applications will want to tune this
             // value to their specific use case. There is a high likelihood that
             // a larger read buffer will work better.
             buffer: BytesMut::with_capacity(4 * 1024),
+            writer: socket
         }
     }
 
@@ -65,7 +69,7 @@ impl Connection {
             //
             // On success, the number of bytes is returned. `0` indicates "end
             // of stream".
-            if 0 == self.stream.read_buf(&mut self.buffer) {
+            if 0 == self.writer.read(&mut self.buffer).unwrap() {
                 // The remote closed the connection. For this to be a clean
                 // shutdown, there should be no data in the read buffer. If
                 // there is, this means that the peer closed the socket while
@@ -84,7 +88,7 @@ impl Connection {
     /// enough data has been buffered yet, `Ok(None)` is returned. If the
     /// buffered data does not represent a valid Protocol, `Err` is returned.
     fn parse_protocol(&mut self) -> Result<Option<Protocol>> {
-        use Protocol::Error::Incomplete;
+        // use Protocol::Error::Incomplete;
 
         // Cursor is used to track the "current" location in the
         // buffer. Cursor also implements `Buf` from the `bytes` crate
@@ -158,7 +162,7 @@ impl Connection {
         match protocol {
             Protocol::Array(val) => {
                 // Encode the protocol type prefix. For an array, it is `*`.
-                self.stream.write_u8(b'*');
+                self.writer.write(&[b'*']).expect("TODO: panic message");
 
                 // Encode the length of the array.
                 self.write_decimal(val.len() as u64)?;
@@ -169,42 +173,42 @@ impl Connection {
                 }
             }
             // The protocol type is a literal. Encode the value directly.
-            _ => self.write_value(protocol),
+            _ => return self.write_value(protocol),
         }
 
         // Ensure the encoded protocol is written to the socket. The calls above
         // are to the buffered stream and writes. Calling `flush` writes the
         // remaining contents of the buffer to the socket.
-        self.stream.flush()
+        self.writer.flush()
     }
 
     /// Write a protocol literal to the stream
     fn write_value(&mut self, protocol: &Protocol) -> io::Result<()> {
         match protocol {
             Protocol::Simple(val) => {
-                self.stream.write_u8(b'+');
-                self.stream.write_all(val.as_bytes())?;
-                self.stream.write_all(b"\r\n")?;
+                self.writer.write(&[b'+']).expect("TODO: panic message");
+                self.writer.write_all(val.as_bytes())?;
+                self.writer.write_all(b"\r\n")?;
             }
             Protocol::Error(val) => {
-                self.stream.write_u8(b'-');
-                self.stream.write_all(val.as_bytes())?;
-                self.stream.write_all(b"\r\n")?;
+                self.writer.write(&[b'-']).expect("TODO: panic message");
+                self.writer.write_all(val.as_bytes())?;
+                self.writer.write_all(b"\r\n")?;
             }
             Protocol::Integer(val) => {
-                self.stream.write_u8(b':');
+                self.writer.write(&[b':']).expect("TODO: panic message");
                 self.write_decimal(*val)?;
             }
             Protocol::Null => {
-                self.stream.write_all(b"$-1\r\n")?;
+                self.writer.write_all(b"$-1\r\n")?;
             }
             Protocol::Bulk(val) => {
                 let len = val.len();
 
-                self.stream.write_u8(b'$');
+                self.writer.write(&[b'$']).expect("TODO: panic message");
                 self.write_decimal(len as u64)?;
-                self.stream.write_all(val)?;
-                self.stream.write_all(b"\r\n")?;
+                self.writer.write_all(val)?;
+                self.writer.write_all(b"\r\n")?;
             }
             // Encoding an `Array` from within a value cannot be done using a
             // recursive strategy. In general, async fns do not support
@@ -218,7 +222,7 @@ impl Connection {
 
     /// Write a decimal Protocol to the stream
     fn write_decimal(&mut self, val: u64) -> io::Result<()> {
-        use std::io::Write;
+        // use std::io::Write;
 
         // Convert the value to a string
         let mut buf = [0u8; 20];
@@ -226,8 +230,8 @@ impl Connection {
         write!(&mut buf, "{}", val)?;
 
         let pos = buf.position() as usize;
-        self.stream.write_all(&buf.get_ref()[..pos])?;
-        self.stream.write_all(b"\r\n")?;
+        self.writer.write_all(&buf.get_ref()[..pos])?;
+        self.writer.write_all(b"\r\n")?;
 
         Ok(())
     }

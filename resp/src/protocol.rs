@@ -53,14 +53,14 @@ impl Protocol {
     /// # Panics
     ///
     /// panics if `self` is not an array
-    pub(crate) fn push_int(&mut self, value: u64) {
-        match self {
-            Protocol::Array(vec) => {
-                vec.push(Protocol::Integer(value));
-            }
-            _ => panic!("not an array Protocol"),
-        }
-    }
+    // pub(crate) fn push_int(&mut self, value: u64) {
+    //     match self {
+    //         Protocol::Array(vec) => {
+    //             vec.push(Protocol::Integer(value));
+    //         }
+    //         _ => panic!("not an array Protocol"),
+    //     }
+    // }
 
     /// Checks if an entire message can be decoded from `src`
     pub fn check(src: &mut Cursor<&[u8]>) -> Result<(), Error> {

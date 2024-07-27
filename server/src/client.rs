@@ -24,10 +24,10 @@ impl Client {
 
     pub(crate) fn read_from_query(&mut self) -> () {
         let protocol = match self.connection.read_protocol() {
-            Some(frame) => frame,
-            None => return (),
+            Ok(op_protocol) => op_protocol.unwrap(),
+            Err(e) => return (),
         };
-        let command = Command::from(protocol);
+        let command = Command::from_protocol(protocol).unwrap();
         command.apply(&mut self.connection).unwrap()
     }
 }
@@ -38,11 +38,6 @@ impl Drop for Client {
     }
 }
 
-impl core::lifecycle::lifecycle::LiteLifecycle for Client {
-    fn initialize(&mut self) -> Result<(), Err> {
-        todo!()
-    }
-}
 
 type ClientID = usize;
 pub(crate) struct ClientManager {

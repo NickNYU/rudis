@@ -17,12 +17,12 @@
 pub(crate) type EventLoopFlag = i32;
 
 
-const AE_FILE_EVENTS: i32 = (1<<0);
-const AE_TIME_EVENTS: i32 = (1<<1);
-const AE_ALL_EVENTS: i32 = (AE_FILE_EVENTS | AE_TIME_EVENTS);
-const AE_DONT_WAIT: i32 = (1<<2);
-const AE_CALL_BEFORE_SLEEP: i32 = (1<<3);
-const AE_CALL_AFTER_SLEEP: i32 = (1<<4);
+const AE_FILE_EVENTS: i32 = 1<<0;
+const AE_TIME_EVENTS: i32 = 1<<1;
+const AE_ALL_EVENTS: i32 = AE_FILE_EVENTS | AE_TIME_EVENTS;
+const AE_DONT_WAIT: i32 = 1<<2;
+const AE_CALL_BEFORE_SLEEP: i32 = 1<<3;
+const AE_CALL_AFTER_SLEEP: i32 = 1<<4;
 
 pub(crate) fn is_file_event(flags: EventLoopFlag) -> bool {
     flags & AE_FILE_EVENTS > 0
