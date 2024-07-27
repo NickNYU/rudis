@@ -1,6 +1,5 @@
 use resp::{self, Result, protocol::Protocol, parse::Parser, parse::ParseError};
 use bytes::Bytes;
-use tracing::{debug, instrument};
 use crate::connection::Connection;
 
 /// Returns PONG if no argument is provided, otherwise
@@ -52,14 +51,14 @@ impl Ping {
     ///
     /// The response is written to `dst`. This is called by the server in order
     /// to execute a received command.
-    #[instrument(skip(self, dst))]
+    // #[instrument(skip(self, dst))]
     pub(crate) fn apply(self, dst: &mut Connection) -> Result<()> {
         let response = match self.msg {
             None => Protocol::Simple("PONG".to_string()),
             Some(msg) => Protocol::Bulk(msg),
         };
 
-        debug!(?response);
+        // debug!(?response);
 
         // Write the response back to the client
         dst.write_protocol(&response)?;

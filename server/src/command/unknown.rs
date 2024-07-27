@@ -1,4 +1,3 @@
-use tracing::{debug, instrument};
 use resp::{Result, protocol::Protocol};
 use crate::connection::Connection;
 
@@ -25,13 +24,13 @@ impl Unknown {
     /// Responds to the client, indicating the command is not recognized.
     ///
     /// This usually means the command is not yet implemented by `rudis`.
-    #[instrument(skip(self, dst))]
-    pub(crate) async fn apply(self, dst: &mut Connection) -> Result<()> {
+    // #[instrument(skip(self, dst))]
+    pub(crate) fn apply(self, dst: &mut Connection) -> Result<()> {
         let response = Protocol::Error(format!("ERR unknown command '{}'", self.command_name));
 
-        debug!(?response);
+        // debug!(?response);
 
-        dst.write_frame(&response).await?;
+        dst.write_protocol(&response).expect("TODO: panic message");
         Ok(())
     }
 }

@@ -1,9 +1,8 @@
 use std::io;
 use std::time::Duration;
-use core::lifecycle::lifecycle::ConstructiveLiteLifecycle;
 
-pub(crate) type IoEventProc<DATA: Sized + Send> = dyn FnOnce(DATA);
-pub(crate) trait IoEventManager: ConstructiveLiteLifecycle {
+// pub(crate) type IoEventProc<DATA: Sized + Send> = dyn FnOnce(DATA);
+pub(crate) trait IoEventManager {
 
 
     // There's no actual process io event in Redis, there's only process_events mix of process_time_events

@@ -35,7 +35,7 @@ impl Parser {
     pub fn new(protocol: Protocol) -> Result<Parser, ParseError> {
         let array = match protocol {
             Protocol::Array(array) => array,
-            Protocol => return Err(format!("protocol error; expected array, got {:?}", Protocol).into()),
+            protocol => return Err(format!("protocol error; expected array, got {:?}", protocol).into()),
         };
 
         Ok(Parser {
@@ -63,9 +63,9 @@ impl Parser {
             Protocol::Bulk(data) => str::from_utf8(&data[..])
                 .map(|s| s.to_string())
                 .map_err(|_| "protocol error; invalid string".into()),
-            Protocol => Err(format!(
+            protocol => Err(format!(
                 "protocol error; expected simple Protocol or bulk Protocol, got {:?}",
-                Protocol
+                protocol
             )
                 .into()),
         }
@@ -83,9 +83,9 @@ impl Parser {
             // raw bytes, they are considered separate types.
             Protocol::Simple(s) => Ok(Bytes::from(s.into_bytes())),
             Protocol::Bulk(data) => Ok(data),
-            Protocol => Err(format!(
+            protocol => Err(format!(
                 "protocol error; expected simple Protocol or bulk Protocol, got {:?}",
-                Protocol
+                protocol
             )
                 .into()),
         }
@@ -98,21 +98,21 @@ impl Parser {
     ///
     /// If the next entry cannot be represented as an integer, then an error is
     /// returned.
-    pub(crate) fn next_int(&mut self) -> Result<u64, ParseError> {
-        use atoi::atoi;
-
-        const MSG: &str = "protocol error; invalid number";
-
-        match self.next()? {
-            // An integer Protocol type is already stored as an integer.
-            Protocol::Integer(v) => Ok(v),
-            // Simple and bulk Protocols must be parsed as integers. If the parsing
-            // fails, an error is returned.
-            Protocol::Simple(data) => atoi::<u64>(data.as_bytes()).ok_or_else(|| MSG.into()),
-            Protocol::Bulk(data) => atoi::<u64>(&data).ok_or_else(|| MSG.into()),
-            Protocol => Err(format!("protocol error; expected int Protocol but got {:?}", Protocol).into()),
-        }
-    }
+    // pub(crate) fn next_int(&mut self) -> Result<u64, ParseError> {
+    //     use atoi::atoi;
+    //
+    //     const MSG: &str = "protocol error; invalid number";
+    //
+    //     match self.next()? {
+    //         // An integer Protocol type is already stored as an integer.
+    //         Protocol::Integer(v) => Ok(v),
+    //         // Simple and bulk Protocols must be parsed as integers. If the parsing
+    //         // fails, an error is returned.
+    //         Protocol::Simple(data) => atoi::<u64>(data.as_bytes()).ok_or_else(|| MSG.into()),
+    //         Protocol::Bulk(data) => atoi::<u64>(&data).ok_or_else(|| MSG.into()),
+    //         protocol => Err(format!("protocol error; expected int Protocol but got {:?}", protocol).into()),
+    //     }
+    // }
 
     /// Ensure there are no more entries in the array
     pub fn finish(&mut self) -> Result<(), ParseError> {
