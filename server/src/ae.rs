@@ -2,6 +2,7 @@ use std::io;
 use std::time::Duration;
 use crate::eventloop::io_event::IoEventManager;
 use crate::eventloop::mio_event_manager::MioEventManager;
+use crate::server::RedisServer;
 
 pub(crate) trait EventLoop {
     fn get_max_file_descriptor() -> i32;
@@ -16,14 +17,14 @@ pub(crate) struct SingleThreadEventLoop {
     io_event_loop: MioEventManager,
 }
 
-impl Default for SingleThreadEventLoop {
-    fn default() -> Self {
+impl SingleThreadEventLoop {
+
+    pub(crate) fn new(redis_server: RedisServer) -> Self {
         Self {
-            io_event_loop: MioEventManager::new()
+            io_event_loop: MioEventManager::new(redis_server)
         }
     }
-}
-impl SingleThreadEventLoop {
+
     pub(crate) fn run(&mut self) -> () {
         loop {
             // self.before_sleep().unwrap();

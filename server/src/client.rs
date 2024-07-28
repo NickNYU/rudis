@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
 use mio::net::TcpStream;
 use crate::command::Command;
 use ahash::AHashMap;
@@ -40,14 +41,15 @@ impl Drop for Client {
 
 
 type ClientID = usize;
+#[derive(Debug, Clone)]
 pub(crate) struct ClientManager {
-    clients: AHashMap<ClientID, Box<Client>>,
+    clients: Arc<AHashMap<ClientID, Box<Client>>>,
 }
 
 impl Default for ClientManager {
     fn default() -> Self {
         Self {
-            clients: AHashMap::new()
+            clients: Arc::new(AHashMap::new())
         }
     }
 }
