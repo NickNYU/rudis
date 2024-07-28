@@ -1,23 +1,28 @@
-use lazy_static::lazy_static;
+use std::sync::Arc;
 use crate::client::ClientManager;
 
-lazy_static! {
-    pub static ref SERVER: Box<RedisServer> = Box::new(RedisServer::default());
-}
+#[derive(Debug, Clone)]
 pub(crate) struct RedisServer {
     pub(crate) client_manager: ClientManager,
-    pub(crate) config: RedisServerConfig
+    pub(crate) config: Arc<RedisServerConfig>
 }
 
 impl Default for RedisServer {
     fn default() -> Self {
         Self {
             client_manager: ClientManager::default(),
-            config: RedisServerConfig{port: 6379}
+            config: Arc::new(RedisServerConfig{port: 6379})
         }
     }
 }
 
+impl RedisServer {
+    pub fn client_manager(&self) -> ClientManager {
+        self.client_manager.clone()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct RedisServerConfig {
     pub(crate) port: i32,
 

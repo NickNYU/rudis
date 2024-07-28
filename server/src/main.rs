@@ -1,5 +1,5 @@
 use crate::ae::SingleThreadEventLoop;
-use crate::server::SERVER;
+use crate::server::RedisServer;
 
 mod ae;
 mod eventloop;
@@ -10,5 +10,6 @@ mod connection;
 
 fn main() {
     // SERVER.client_manager;
-    SingleThreadEventLoop::default().run();
+    let redis_server = RedisServer::default();
+    SingleThreadEventLoop::new(redis_server).run();
 }
