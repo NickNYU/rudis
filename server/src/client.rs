@@ -1,16 +1,16 @@
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use mio::net::TcpStream;
 use crate::command::Command;
 use ahash::AHashMap;
 use crate::connection::Connection;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Client {
     client_id: usize,
     address: SocketAddr,
     pub(crate) connection: Connection,
-    cmd: Option<Command>,
+    // cmd: Option<Command>,
 }
 
 impl Client {
@@ -19,7 +19,7 @@ impl Client {
             client_id,
             address,
             connection: Connection::new(conn),
-            cmd: None
+            // cmd: None
         }
     }
 
@@ -43,25 +43,27 @@ impl Drop for Client {
 type ClientID = usize;
 #[derive(Debug, Clone)]
 pub(crate) struct ClientManager {
-    clients: Arc<AHashMap<ClientID, Box<Client>>>,
+    clients: Arc<Mutex<AHashMap<ClientID, Box<Client>>>>,
 }
 
 impl Default for ClientManager {
     fn default() -> Self {
         Self {
-            clients: Arc::new(AHashMap::new())
+            clients: Arc::new(Mutex::new(AHashMap::new()))
         }
     }
 }
 
 impl ClientManager {
 
-    pub(crate) fn get_client(&mut self, client_id: usize) -> Option<&mut Box<Client>> {
-        self.clients.get_mut(&client_id)
+    pub(crate) fn get_client(&mut self, client_id: usize) -> Box<Client> {
+        let mut binding = self.clients.lock().unwrap();
+        let client = binding.get_mut(&client_id);
+        client.unwrap().clone()
     }
 
     pub(crate) fn create_client(&mut self, fd: usize, conn: TcpStream, address: SocketAddr) -> () {
         let client = Box::new(Client::new(fd, conn, address));
-        self.clients.insert(fd, client);
+        self.clients.lock().unwrap().insert(fd, client);
     }
 }
