@@ -2,6 +2,8 @@ use resp::{self, Result, protocol::Protocol};
 
 use bytes::{Buf, BytesMut};
 use std::io::{self, BufWriter, Cursor, Read, Write};
+use std::rc::Rc;
+use std::sync::Arc;
 use mio::net::TcpStream;
 
 /// Send and receive `Protocol` values from a remote peer.
@@ -16,18 +18,19 @@ use mio::net::TcpStream;
 ///
 /// When sending Protocols, the Protocol is first encoded into the write buffer.
 /// The contents of the write buffer are then written to the socket.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Connection {
     // The `TcpStream`. It is decorated with a `BufWriter`, which provides write
     // level buffering. The `BufWriter` implementation provided by Tokio is
     // sufficient for our needs.
     // stream: BufWriter<TcpStream>,
 
-    writer: TcpStream,
+    writer: Rc<TcpStream>,
 
     // The buffer for reading Protocols.
     buffer: BytesMut,
 }
+
 
 
 impl Connection {
@@ -41,7 +44,7 @@ impl Connection {
             // value to their specific use case. There is a high likelihood that
             // a larger read buffer will work better.
             buffer: BytesMut::with_capacity(4 * 1024),
-            writer: socket
+            writer: Rc::new(socket)
         }
     }
 

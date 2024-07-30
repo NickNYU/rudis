@@ -13,13 +13,13 @@ use crate::server::RedisServer;
 pub(crate) struct MioEventManager {
     mio_poll: Poll,
 
-    events: Arc<Events>,
+    events: Arc<Mutex<Events>>,
 
     binder: Arc<Mutex<TcpListener>>,
 
     id_generator: AtomicUsize,
 
-    client_manager: ClientManager,
+    client_manager: Arc<Mutex<ClientManager>>,
 
 }
 
@@ -39,10 +39,10 @@ impl MioEventManager {
             .expect("TODO: panic message");
         Self {
             mio_poll: poll,
-            events: Arc::new(Events::with_capacity(Self::EVENTS_SIZE)),
+            events: Arc::new(Mutex::new(Events::with_capacity(Self::EVENTS_SIZE))),
             binder: Arc::new(Mutex::new(server)),
             id_generator: AtomicUsize::new(1),
-            client_manager: redis_server.client_manager()
+            client_manager: Arc::new(Mutex::new(redis_server.client_manager()))
         }
     }
 
@@ -50,32 +50,32 @@ impl MioEventManager {
         event.token() == Self::ACCEPTOR
     }
 
-    fn accept_new_client(&mut self) -> () {
-        if let Ok((mut connection, address)) = self.binder.as_ref().get_mut().unwrap().accept() {
+    fn accept_new_client(&self) -> () {
+        if let Ok((mut connection, address)) = self.binder.lock().unwrap().accept() {
             println!("Accepted connection from: {}", address);
             let fd = self.id_generator.fetch_add(1, Ordering::Relaxed);
             self.mio_poll.registry().register(
                 &mut connection,
                 Token(fd),
                 Interest::READABLE.add(Interest::WRITABLE), ).expect("TODO: panic message");
-            self.client_manager.create_client(fd, connection, address);
+            self.client_manager.lock().unwrap().create_client(fd, connection, address);
         };
 
     }
 
-    fn read_for_client(&mut self, event: &Event) -> () {
+    fn read_for_client(&self, event: &Event) -> () {
         // event
-        if let Some(client) = self
-            .client_manager.get_client(event.token().0) {
-            client.read_from_query();
-        }
+        let mut binding = self.client_manager.lock().unwrap();
+        let mut client = binding.get_client(event.token().0);
+        client.read_from_query();
+
     }
 }
 
 impl IoEventManager for MioEventManager {
 
     fn process_io_events(&mut self, timeout: Option<Duration>) -> io::Result<i64> {
-        let events = self.events.clone();
+        let mut events = self.events.lock().unwrap();
         match self.mio_poll.poll(&mut *events, timeout) {
             Ok(()) => {
                 let mut counter: i64 = 0;
