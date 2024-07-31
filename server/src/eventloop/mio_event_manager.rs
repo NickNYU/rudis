@@ -82,7 +82,7 @@ impl IoEventManager for MioEventManager {
                 for mio_event in events.iter() {
                     if Self::is_accept_event(mio_event) {
                         self.accept_new_client();
-                    } else {
+                    } else if mio_event.is_readable() {
                         self.read_for_client(mio_event)
                     }
                     counter += 1;

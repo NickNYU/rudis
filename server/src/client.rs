@@ -9,7 +9,7 @@ use crate::connection::Connection;
 pub(crate) struct Client {
     client_id: usize,
     address: SocketAddr,
-    pub(crate) connection: Connection,
+    pub(crate) connection: Arc<Mutex<Connection>>,
     // cmd: Option<Command>,
 }
 
@@ -18,26 +18,28 @@ impl Client {
         Self {
             client_id,
             address,
-            connection: Connection::new(conn),
+            connection: Arc::new(Mutex::new(Connection::new(conn))),
             // cmd: None
         }
     }
 
     pub(crate) fn read_from_query(&mut self) -> () {
-        let protocol = match self.connection.read_protocol() {
-            Ok(op_protocol) => op_protocol.unwrap(),
+        let protocol = match self.connection.lock().unwrap().read_protocol() {
+            Ok(op_protocol) => op_protocol,
             Err(e) => return (),
         };
-        let command = Command::from_protocol(protocol).unwrap();
-        command.apply(&mut self.connection).unwrap()
+        if let Some(prot) = protocol {
+            let command = Command::from_protocol(prot).unwrap();
+            command.apply(&mut self.connection.lock().unwrap()).unwrap()
+        }
     }
 }
 
-impl Drop for Client {
-    fn drop(&mut self) {
-        todo!()
-    }
-}
+// impl Drop for Client {
+//     fn drop(&mut self) {
+//         todo!()
+//     }
+// }
 
 
 type ClientID = usize;
