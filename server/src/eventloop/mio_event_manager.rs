@@ -6,7 +6,7 @@ use std::time::Duration;
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Event;
 use mio::net::TcpListener;
-use crate::client::ClientManager;
+use crate::client::{Client, ClientManager};
 use crate::eventloop::io_event::IoEventManager;
 use crate::server::RedisServer;
 
@@ -57,7 +57,7 @@ impl MioEventManager {
             self.mio_poll.registry().register(
                 &mut connection,
                 Token(fd),
-                Interest::READABLE.add(Interest::WRITABLE), ).expect("TODO: panic message");
+                Interest::READABLE, ).expect("TODO: panic message");
             self.client_manager.lock().unwrap().create_client(fd, connection, address);
         };
 
@@ -67,8 +67,18 @@ impl MioEventManager {
         // event
         let mut binding = self.client_manager.lock().unwrap();
         let mut client = binding.get_client(event.token().0);
-        client.read_from_query();
+        match client {
+            None => {unreachable!()}
+            Some(mut c) => {
+                c.read_from_query();
+            }
+        }
 
+    }
+
+    fn remove_client(&self, event: &Event) -> () {
+        let mut binding = self.client_manager.lock().unwrap();
+        binding.remove_client(event.token().0)
     }
 }
 
@@ -84,6 +94,8 @@ impl IoEventManager for MioEventManager {
                         self.accept_new_client();
                     } else if mio_event.is_readable() {
                         self.read_for_client(mio_event)
+                    } else if mio_event.is_read_closed() || mio_event.is_write_closed() {
+                        self.remove_client(mio_event);
                     }
                     counter += 1;
                 }

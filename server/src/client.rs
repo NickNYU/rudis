@@ -58,14 +58,22 @@ impl Default for ClientManager {
 
 impl ClientManager {
 
-    pub(crate) fn get_client(&mut self, client_id: usize) -> Box<Client> {
+    pub(crate) fn get_client(&mut self, client_id: usize) -> Option<Box<Client>> {
         let mut binding = self.clients.lock().unwrap();
         let client = binding.get_mut(&client_id);
-        client.unwrap().clone()
+        return match client {
+            None => {None}
+            Some(c) => { Some(c.clone()) }
+        }
     }
 
     pub(crate) fn create_client(&mut self, fd: usize, conn: TcpStream, address: SocketAddr) -> () {
         let client = Box::new(Client::new(fd, conn, address));
         self.clients.lock().unwrap().insert(fd, client);
+    }
+
+    pub(crate) fn remove_client(&mut self, client_id: ClientID) {
+        let mut binding = self.clients.lock().unwrap();
+        binding.remove(&client_id);
     }
 }
