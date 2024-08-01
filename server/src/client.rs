@@ -4,6 +4,7 @@ use mio::net::TcpStream;
 use crate::command::Command;
 use ahash::AHashMap;
 use crate::connection::Connection;
+use resp::Result;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Client {
@@ -23,15 +24,18 @@ impl Client {
         }
     }
 
-    pub(crate) fn read_from_query(&mut self) -> () {
+    pub(crate) fn read_from_query(&mut self) -> Result<()> {
         let protocol = match self.connection.lock().unwrap().read_protocol() {
             Ok(op_protocol) => op_protocol,
-            Err(e) => return (),
+            Err(e) => return Result::Err(e),
         };
+
         if let Some(prot) = protocol {
             let command = Command::from_protocol(prot).unwrap();
-            command.apply(&mut self.connection.lock().unwrap()).unwrap()
+            command.apply(&mut self.connection.lock().unwrap()).unwrap();
+            return Result::Ok(())
         }
+        return Result::Ok(())
     }
 }
 

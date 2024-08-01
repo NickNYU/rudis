@@ -70,7 +70,10 @@ impl MioEventManager {
         match client {
             None => {unreachable!()}
             Some(mut c) => {
-                c.read_from_query();
+                match c.read_from_query() {
+                    Ok(_) => {}
+                    Err(_) => {binding.remove_client(event.token().0)}
+                }
             }
         }
 
