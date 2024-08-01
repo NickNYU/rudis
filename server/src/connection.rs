@@ -23,7 +23,7 @@ pub struct Connection {
     // sufficient for our needs.
     // stream: BufWriter<TcpStream>,
 
-    writer: TcpStream,
+    tcp_stream: TcpStream,
 
     // The buffer for reading Protocols.
     buffer: BytesMut,
@@ -42,7 +42,7 @@ impl Connection {
             // value to their specific use case. There is a high likelihood that
             // a larger read buffer will work better.
             buffer: BytesMut::with_capacity(4 * 1024),
-            writer: socket
+            tcp_stream: socket
         }
     }
 
@@ -70,7 +70,7 @@ impl Connection {
             //
             // On success, the number of bytes is returned. `0` indicates "end
             // of stream".
-            if 0 == self.writer.read(&mut self.buffer).unwrap() {
+            if 0 == self.tcp_stream.read(&mut self.buffer).unwrap() {
                 // The remote closed the connection. For this to be a clean
                 // shutdown, there should be no data in the read buffer. If
                 // there is, this means that the peer closed the socket while
@@ -163,7 +163,7 @@ impl Connection {
         match protocol {
             Protocol::Array(val) => {
                 // Encode the protocol type prefix. For an array, it is `*`.
-                self.writer.write(&[b'*']).expect("TODO: panic message");
+                self.tcp_stream.write(&[b'*']).expect("TODO: panic message");
 
                 // Encode the length of the array.
                 self.write_decimal(val.len() as u64)?;
@@ -180,36 +180,36 @@ impl Connection {
         // Ensure the encoded protocol is written to the socket. The calls above
         // are to the buffered stream and writes. Calling `flush` writes the
         // remaining contents of the buffer to the socket.
-        self.writer.flush()
+        self.tcp_stream.flush()
     }
 
     /// Write a protocol literal to the stream
     fn write_value(&mut self, protocol: &Protocol) -> io::Result<()> {
         match protocol {
             Protocol::Simple(val) => {
-                self.writer.write(&[b'+']).expect("TODO: panic message");
-                self.writer.write_all(val.as_bytes())?;
-                self.writer.write_all(b"\r\n")?;
+                self.tcp_stream.write(&[b'+']).expect("TODO: panic message");
+                self.tcp_stream.write_all(val.as_bytes())?;
+                self.tcp_stream.write_all(b"\r\n")?;
             }
             Protocol::Error(val) => {
-                self.writer.write(&[b'-']).expect("TODO: panic message");
-                self.writer.write_all(val.as_bytes())?;
-                self.writer.write_all(b"\r\n")?;
+                self.tcp_stream.write(&[b'-']).expect("TODO: panic message");
+                self.tcp_stream.write_all(val.as_bytes())?;
+                self.tcp_stream.write_all(b"\r\n")?;
             }
             Protocol::Integer(val) => {
-                self.writer.write(&[b':']).expect("TODO: panic message");
+                self.tcp_stream.write(&[b':']).expect("TODO: panic message");
                 self.write_decimal(*val)?;
             }
             Protocol::Null => {
-                self.writer.write_all(b"$-1\r\n")?;
+                self.tcp_stream.write_all(b"$-1\r\n")?;
             }
             Protocol::Bulk(val) => {
                 let len = val.len();
 
-                self.writer.write(&[b'$']).expect("TODO: panic message");
+                self.tcp_stream.write(&[b'$']).expect("TODO: panic message");
                 self.write_decimal(len as u64)?;
-                self.writer.write_all(val)?;
-                self.writer.write_all(b"\r\n")?;
+                self.tcp_stream.write_all(val)?;
+                self.tcp_stream.write_all(b"\r\n")?;
             }
             // Encoding an `Array` from within a value cannot be done using a
             // recursive strategy. In general, async fns do not support
@@ -231,8 +231,8 @@ impl Connection {
         write!(&mut buf, "{}", val)?;
 
         let pos = buf.position() as usize;
-        self.writer.write_all(&buf.get_ref()[..pos])?;
-        self.writer.write_all(b"\r\n")?;
+        self.tcp_stream.write_all(&buf.get_ref()[..pos])?;
+        self.tcp_stream.write_all(b"\r\n")?;
 
         Ok(())
     }
